@@ -88,6 +88,9 @@ ON public.profiles FOR SELECT USING (true);
 CREATE POLICY "Users can update own profile" 
 ON public.profiles FOR UPDATE USING (auth.uid() = id);
 
+CREATE POLICY "Users can insert own profile" 
+ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
+
 -- Teachers: Public can view teachers, teachers can edit their own workspace
 CREATE POLICY "Public can view teachers" 
 ON public.teachers FOR SELECT USING (true);
@@ -95,6 +98,10 @@ ON public.teachers FOR SELECT USING (true);
 CREATE POLICY "Teachers can update own workspace" 
 ON public.teachers FOR UPDATE 
 USING (profile_id = auth.uid());
+
+CREATE POLICY "Teachers can insert own workspace" 
+ON public.teachers FOR INSERT 
+WITH CHECK (profile_id = auth.uid());
 
 CREATE POLICY "Superadmins can manage teachers" 
 ON public.teachers FOR ALL 

@@ -72,15 +72,15 @@ export default function TeacherSetupPage() {
       if (authError) throw authError;
       if (!authData.user) throw new Error("Failed to create user");
 
-      // 2. Update their profile to be a TEACHER
+      // 2. Insert their profile as a TEACHER
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({ 
+        .insert({ 
+          id: authData.user.id,
           role: 'TEACHER',
           full_name: fullName,
           phone_number: phoneNumber
-        })
-        .eq('id', authData.user.id);
+        });
 
       if (profileError) {
           console.error("Profile update error", profileError);
