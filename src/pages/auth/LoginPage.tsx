@@ -13,6 +13,8 @@ export default function LoginPage({ role = 'student' }: { role?: 'student' | 'te
   const [email, setEmail] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,10 +36,35 @@ export default function LoginPage({ role = 'student' }: { role?: 'student' | 'te
 
     let result;
     if (role === 'student') {
-      result = await supabase.auth.signInWithPassword({
-        phone: whatsapp,
-        password,
-      });
+      if (isLogin) {
+        result = await supabase.auth.signInWithPassword({
+          phone: whatsapp,
+          password,
+        });
+      } else {
+        // Sign Up
+        result = await supabase.auth.signUp({
+          phone: whatsapp,
+          password,
+          options: {
+            data: {
+              role: 'STUDENT',
+              full_name: fullName,
+            }
+          }
+        });
+        
+        if (!result.error) {
+          // Add student row immediately so the dashboard fetches work
+          if (result.data.user) {
+            await supabase.from('students').insert({
+              id: result.data.user.id,
+              profile_id: result.data.user.id,
+              whatsapp_number: whatsapp,
+            });
+          }
+        }
+      }
     } else {
       result = await supabase.auth.signInWithPassword({
         email,
@@ -129,7 +156,7 @@ export default function LoginPage({ role = 'student' }: { role?: 'student' | 'te
           <Card className="border-border shadow-sm">
             <form onSubmit={handleLogin}>
               <CardHeader>
-                <CardTitle className="capitalize">{role} Sign In</CardTitle>
+                <CardTitle className="capitalize">{role} {isLogin ? 'Sign In' : 'Sign Up'}</CardTitle>
                 <CardDescription>
                   {role === 'student' ? 'Use your registered WhatsApp number.' : 'Enter your credentials.'}
                 </CardDescription>
@@ -138,6 +165,20 @@ export default function LoginPage({ role = 'student' }: { role?: 'student' | 'te
                 {error && (
                   <div className="rounded-md bg-danger/10 p-3 text-sm text-danger">
                     {error}
+                  </div>
+                )}
+                {role === 'student' && !isLogin && (
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName">Full Name</Label>
+                    <Input 
+                      id="fullName" 
+                      type="text" 
+                      placeholder="e.g. John Doe" 
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      required
+                      className="focus-visible:ring-primary"
+                    />
                   </div>
                 )}
                 {role === 'student' ? (
@@ -184,11 +225,23 @@ export default function LoginPage({ role = 'student' }: { role?: 'student' | 'te
                   />
                 </div>
               </CardContent>
-              <CardFooter>
+              <CardFooter className="flex flex-col gap-4">
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Sign In
+                  {isLogin ? 'Sign In' : 'Sign Up'}
                 </Button>
+                {role === 'student' && (
+                  <div className="text-center text-sm text-slate-500">
+                    {isLogin ? "Don't have an account? " : "Already have an account? "}
+                    <button
+                      type="button"
+                      onClick={() => setIsLogin(!isLogin)}
+                      className="text-primary hover:underline font-medium"
+                    >
+                      {isLogin ? 'Sign up' : 'Log in'}
+                    </button>
+                  </div>
+                )}
               </CardFooter>
             </form>
           </Card>

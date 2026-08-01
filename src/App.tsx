@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Toaster } from 'sonner';
 import DashboardIndex from '@/pages/dashboard/DashboardIndex';
 import { AuthProvider } from '@/providers/AuthProvider';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
@@ -17,6 +18,7 @@ import AdminTeachersPage from '@/pages/dashboard/admin/AdminTeachersPage';
 function App() {
   return (
     <AuthProvider>
+      <Toaster position="top-center" />
       <Router>
         <Routes>
           {/* Public Routes */}

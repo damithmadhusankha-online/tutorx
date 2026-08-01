@@ -70,6 +70,33 @@ export default function StudentsPage() {
     fetchStudents();
   }, [user]);
 
+  const handleExportCSV = () => {
+    if (students.length === 0) return;
+    
+    const headers = ['Student Name', 'WhatsApp Number', 'Enrolled Classes', 'Joined Date'];
+    const rows = students.map(s => [
+      s.profiles?.full_name || 'Unknown',
+      s.whatsapp_number || 'Unknown',
+      s.classes_enrolled.toString(),
+      s.joined_at
+    ]);
+    
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(r => r.map(c => `"${c}"`).join(','))
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'students_report.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -77,7 +104,7 @@ export default function StudentsPage() {
           <h2 className="text-2xl font-bold text-heading">Students</h2>
           <p className="text-sm text-paragraph">View and manage all students enrolled in your classes.</p>
         </div>
-        <Button variant="outline" className="w-full sm:w-auto">
+        <Button variant="outline" className="w-full sm:w-auto" onClick={handleExportCSV}>
           <FileDown className="mr-2 h-4 w-4" />
           Export CSV
         </Button>

@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 
 interface TeacherAdminData {
   id: string;
@@ -117,8 +118,8 @@ export default function AdminTeachersPage() {
         t.id === teacherId ? { ...t, subscription_status: newStatus } : t
       ));
     } catch (err) {
-      console.error('Error updating status:', err);
-      alert('Failed to update teacher status.');
+      console.error(err);
+      toast.error('Failed to update teacher status.');
     } finally {
       setActionLoading(null);
     }
@@ -146,11 +147,11 @@ export default function AdminTeachersPage() {
 
       if (error) throw error;
 
-      const url = `${window.location.origin}/teacher-setup?code=${code}`;
-      setInviteLink(url);
+      setInviteLink(`${window.location.origin}/teacher-setup?code=${code}`);
+      toast.success('Invite link generated successfully!');
     } catch (err: any) {
-      console.error('Error generating invite:', err);
-      alert(err.message || 'Failed to generate invite');
+      console.error(err);
+      toast.error(err.message || 'Failed to generate invite');
     } finally {
       setInviting(false);
     }
@@ -244,7 +245,7 @@ export default function AdminTeachersPage() {
                     className="w-full"
                     onClick={() => {
                       navigator.clipboard.writeText(inviteLink);
-                      alert('Copied to clipboard!');
+                      toast.success('Copied to clipboard!');
                     }}
                   >
                     Copy Link

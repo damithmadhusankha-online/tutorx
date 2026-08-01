@@ -123,7 +123,14 @@ export function DashboardLayout() {
           <Button 
             variant="ghost" 
             className="w-full justify-start mt-2 text-danger hover:text-danger hover:bg-danger/10" 
-            onClick={signOut}
+            onClick={async () => {
+              if (role === 'TEACHER' || role === 'SUPERADMIN' || role === 'MANAGER') {
+                localStorage.setItem('logout_role', 'teacher');
+              } else {
+                localStorage.setItem('logout_role', 'student');
+              }
+              await signOut();
+            }}
           >
             <LogOut className="mr-2 h-4 w-4" />
             Sign Out
@@ -136,13 +143,20 @@ export function DashboardLayout() {
         {/* Mobile Header */}
         <header className="flex h-16 items-center justify-between border-b border-border bg-card px-4 lg:px-8">
           <div className="flex items-center gap-4 lg:hidden">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            >
-              <Menu className="h-6 w-6 text-heading" />
-            </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={async () => {
+                  if (role === 'TEACHER' || role === 'SUPERADMIN' || role === 'MANAGER') {
+                    localStorage.setItem('logout_role', 'teacher');
+                  } else {
+                    localStorage.setItem('logout_role', 'student');
+                  }
+                  await signOut();
+                }}
+              >
+                <LogOut className="h-5 w-5 text-danger" />
+              </Button>
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground font-bold text-sm">
                 TX

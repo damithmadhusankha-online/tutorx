@@ -2,8 +2,18 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
-import { Lock, LogOut, GraduationCap, Calendar, Clock, Sparkles, CreditCard, Landmark } from 'lucide-react';
+import { Lock, LogOut, GraduationCap, Calendar, Clock, Sparkles, CreditCard, Landmark, CheckCircle, Upload, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
+import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 interface TeacherContext {
   id: string;
@@ -30,11 +40,19 @@ interface ClassData {
 }
 
 export default function StudentDashboard() {
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [teacher, setTeacher] = useState<TeacherContext | null>(null);
   const [classes, setClasses] = useState<ClassData[]>([]);
+  const [enrollments, setEnrollments] = useState<any[]>([]);
+  const [slips, setSlips] = useState<any[]>([]);
+
+  // Upload State
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+  const [slipUrl, setSlipUrl] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     async function loadDashboard() {
@@ -75,6 +93,23 @@ export default function StudentDashboard() {
         if (classesError) throw classesError;
         setClasses(classesData || []);
 
+        // Fetch Enrollments
+        if (user) {
+          const { data: enrollmentsData } = await supabase
+            .from('enrollments')
+            .select('class_id, access_until')
+            .eq('student_id', user.id);
+          setEnrollments(enrollmentsData || []);
+
+          // Fetch Pending Slips
+          const { data: slipsData } = await supabase
+            .from('payment_slips')
+            .select('class_id, status')
+            .eq('student_id', user.id)
+            .eq('status', 'pending');
+          setSlips(slipsData || []);
+        }
+
       } catch (err: any) {
         console.error('Failed to load student dashboard:', err);
         setError('Failed to load teacher context. Please try logging in again via the public link.');
@@ -114,6 +149,42 @@ export default function StudentDashboard() {
       </div>
     );
   }
+
+  const handleUploadSlip = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedClassId || !slipUrl || !user) return;
+
+    setIsUploading(true);
+    try {
+      const { error } = await supabase.from('payment_slips').insert({
+        student_id: user.id,
+        class_id: selectedClassId,
+        slip_url: slipUrl,
+        amount: classes.find(c => c.id === selectedClassId)?.monthly_fee || 0,
+        status: 'pending'
+      });
+
+      if (error) throw error;
+      
+      toast.success('Payment slip uploaded successfully! Waiting for teacher approval.');
+      setIsUploadOpen(false);
+      setSlipUrl('');
+      
+      // Refresh slips
+      const { data } = await supabase
+        .from('payment_slips')
+        .select('class_id, status')
+        .eq('student_id', user.id)
+        .eq('status', 'pending');
+      setSlips(data || []);
+      
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || 'Failed to upload slip');
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
@@ -185,32 +256,86 @@ export default function StudentDashboard() {
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {classes.map((cls) => (
-              <Card key={cls.id} className="hover:border-primary/50 transition-colors shadow-sm">
-                <CardHeader>
-                  <div className="text-xs font-semibold tracking-wider text-primary uppercase mb-2">
-                    {cls.subject}
-                  </div>
-                  <CardTitle className="line-clamp-2">{cls.title}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3 text-sm text-paragraph">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span>Monthly Subscription</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-semibold text-heading">LKR {cls.monthly_fee.toLocaleString()} / mo</span>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button className="w-full">Join Class</Button>
-                </CardFooter>
-              </Card>
-            ))}
+            {classes.map((cls) => {
+              const isEnrolled = enrollments.some(e => e.class_id === cls.id && new Date(e.access_until) > new Date());
+              const isPending = slips.some(s => s.class_id === cls.id && s.status === 'pending');
+
+              return (
+                <Card key={cls.id} className={`hover:border-primary/50 transition-colors shadow-sm ${isEnrolled ? 'border-success/50 bg-success/5' : ''}`}>
+                  <CardHeader>
+                    <div className="text-xs font-semibold tracking-wider text-primary uppercase mb-2">
+                      {cls.subject}
+                    </div>
+                    <CardTitle className="line-clamp-2">{cls.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm text-paragraph">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span>Monthly Subscription</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-semibold text-heading">LKR {cls.monthly_fee.toLocaleString()} / mo</span>
+                    </div>
+                  </CardContent>
+                  <CardFooter>
+                    {isEnrolled ? (
+                      <Button className="w-full bg-success hover:bg-success/90 text-white cursor-default" variant="secondary">
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        Enrolled
+                      </Button>
+                    ) : isPending ? (
+                      <Button className="w-full bg-warning/10 text-warning hover:bg-warning/20 cursor-default" variant="outline">
+                        <AlertCircle className="mr-2 h-4 w-4" />
+                        Pending Verification
+                      </Button>
+                    ) : (
+                      <Button 
+                        className="w-full"
+                        onClick={() => {
+                          setSelectedClassId(cls.id);
+                          setIsUploadOpen(true);
+                        }}
+                      >
+                        <Upload className="mr-2 h-4 w-4" />
+                        Upload Payment Slip
+                      </Button>
+                    )}
+                  </CardFooter>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>
+
+      <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Upload Payment Slip</DialogTitle>
+            <DialogDescription>
+              Provide a link to your uploaded payment slip image.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleUploadSlip} className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label>Image URL</Label>
+              <Input 
+                type="url" 
+                placeholder="https://..." 
+                value={slipUrl}
+                onChange={e => setSlipUrl(e.target.value)}
+                required
+              />
+            </div>
+            <div className="flex justify-end pt-4">
+              <Button type="submit" disabled={isUploading}>
+                {isUploading ? 'Uploading...' : 'Submit Slip'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

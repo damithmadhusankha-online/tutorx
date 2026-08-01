@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function TeacherSetupPage() {
   const [searchParams] = useSearchParams();
@@ -56,7 +57,7 @@ export default function TeacherSetupPage() {
   const handleSetup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
-      alert("Passwords don't match!");
+      toast.error("Passwords don't match!");
       return;
     }
     
@@ -110,7 +111,7 @@ export default function TeacherSetupPage() {
 
     } catch (err: any) {
       console.error(err);
-      alert(err.message || 'Failed to complete setup.');
+      toast.error(err.message || 'Failed to complete setup.');
     } finally {
       setSettingUp(false);
     }

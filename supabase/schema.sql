@@ -21,6 +21,7 @@ CREATE TABLE public.teachers (
   institute_name TEXT NOT NULL,
   subdomain TEXT UNIQUE,
   subscription_status TEXT DEFAULT 'trial',
+  custom_page_settings JSONB DEFAULT '{}'::JSONB,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -243,6 +244,40 @@ USING (
   )
 );
 
+-- ==========================================
+-- 10.5 Class Materials
+-- ==========================================
+
+CREATE TABLE public.materials (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  class_id UUID REFERENCES public.classes(id) ON DELETE CASCADE NOT NULL,
+  title TEXT NOT NULL,
+  type TEXT NOT NULL, -- 'pdf', 'link', 'video'
+  file_url TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.materials ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Teachers and managers can manage materials" 
+ON public.materials FOR ALL 
+USING (
+  class_id IN (
+    SELECT id FROM public.classes 
+    WHERE teacher_id IN (SELECT id FROM public.teachers WHERE profile_id = auth.uid())
+  ) OR
+  public.get_current_role() = 'MANAGER'
+);
+
+CREATE POLICY "Enrolled students can view materials" 
+ON public.materials FOR SELECT 
+USING (
+  class_id IN (
+    SELECT class_id FROM public.enrollments 
+    WHERE student_id IN (SELECT id FROM public.students WHERE profile_id = auth.uid())
+  )
+);
+
 
 -- ==========================================
 -- 11. Attendance Monitoring Logs
@@ -331,35 +366,30 @@ USING (true);
 
 
 -- ==========================================
--- 13. Fee Verification & Payment Slips
+-- 13. Payment Slips
 -- ==========================================
-
-CREATE TYPE slip_status AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
 
 CREATE TABLE public.payment_slips (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   student_id UUID REFERENCES public.students(id) ON DELETE CASCADE NOT NULL,
   class_id UUID REFERENCES public.classes(id) ON DELETE CASCADE NOT NULL,
   slip_url TEXT NOT NULL,
-  amount NUMERIC(10, 2) NOT NULL,
-  status slip_status DEFAULT 'PENDING',
-  remarks TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  status TEXT DEFAULT 'pending', -- 'pending', 'approved', 'rejected'
+  month TEXT NOT NULL, -- e.g. '2023-10'
+  amount NUMERIC(10,2),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 ALTER TABLE public.payment_slips ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Students upload own slips" 
+CREATE POLICY "Students can insert own slips" 
 ON public.payment_slips FOR INSERT 
-WITH CHECK (
-  student_id IN (SELECT id FROM public.students WHERE profile_id = auth.uid())
-);
+WITH CHECK (student_id IN (SELECT id FROM public.students WHERE profile_id = auth.uid()));
 
 CREATE POLICY "Students view own slips" 
 ON public.payment_slips FOR SELECT 
-USING (
-  student_id IN (SELECT id FROM public.students WHERE profile_id = auth.uid())
-);
+USING (student_id IN (SELECT id FROM public.students WHERE profile_id = auth.uid()));
 
 CREATE POLICY "Teachers/Managers manage slips" 
 ON public.payment_slips FOR ALL 

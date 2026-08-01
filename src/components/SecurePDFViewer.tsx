@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/providers/AuthProvider';
 import { Loader2, Shield } from 'lucide-react';
+import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
 
 interface SecurePDFViewerProps {
   fileUrl: string;
@@ -44,7 +46,7 @@ export default function SecurePDFViewer({ fileUrl }: SecurePDFViewerProps) {
         (e.metaKey && e.key === 'p')
       ) {
         e.preventDefault();
-        alert('Printing and downloading is disabled for this tute.');
+        toast.error('Printing and downloading is disabled for this tute.');
       }
     };
 

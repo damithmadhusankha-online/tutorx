@@ -14,8 +14,13 @@ export const ProtectedRoute = () => {
   }
 
   if (!session) {
-    // Redirect them to the /login page, but save the current location they were trying to go to
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    const logoutRole = localStorage.getItem('logout_role');
+    const loginPath = logoutRole === 'teacher' ? '/login/teacher' : '/login';
+    // Clear it so it doesn't persist forever
+    localStorage.removeItem('logout_role');
+    
+    // Redirect them to the correct login page
+    return <Navigate to={loginPath} state={{ from: location }} replace />;
   }
 
   return <Outlet />;

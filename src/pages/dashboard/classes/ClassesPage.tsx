@@ -4,6 +4,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 import {
   Table,
   TableBody,
@@ -83,7 +84,7 @@ export default function ClassesPage() {
         .single();
 
       if (teacherError) {
-        alert('You must be registered as a teacher to create classes.');
+        toast.error('You must be registered as a teacher to create classes.');
         throw teacherError;
       }
 
@@ -99,11 +100,13 @@ export default function ClassesPage() {
 
       if (error) throw error;
       
+      toast.success('Class created successfully!');
       setIsDialogOpen(false);
       setFormData({ name: '', grade: '', subject: '', monthly_fee: '' });
       fetchClasses();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating class:', error);
+      toast.error(error.message || 'Failed to create class');
     } finally {
       setIsSubmitting(false);
     }
