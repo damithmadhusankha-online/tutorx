@@ -248,7 +248,7 @@ export default function SettingsPage() {
                   </Label>
                   <div className="flex relative">
                     <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-border bg-slate-100 text-slate-500 text-sm">
-                      tutorx.com/
+                      tutorx.lk/
                     </span>
                     <Input 
                       id="subdomain" 
@@ -259,7 +259,7 @@ export default function SettingsPage() {
                       required
                     />
                   </div>
-                  <p className="text-xs text-paragraph">This creates your custom URL (e.g., tutorx.com/yourname) where students can find your profile and login.</p>
+                  <p className="text-xs text-paragraph">This creates your custom URL (e.g., tutorx.lk/yourname) where students can find your profile and login.</p>
                 </div>
               </div>
             )}

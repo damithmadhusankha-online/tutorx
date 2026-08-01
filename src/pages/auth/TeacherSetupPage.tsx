@@ -65,7 +65,7 @@ export default function TeacherSetupPage() {
     try {
       // 1. Sign up the user
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: inviteData.email,
+        email: inviteData.email.trim(),
         password: password,
       });
 
@@ -167,7 +167,7 @@ export default function TeacherSetupPage() {
             <div>
               <Label>Assigned Subdomain</Label>
               <div className="mt-1 p-2.5 bg-slate-100 border border-slate-200 rounded-lg text-slate-500 font-medium text-sm">
-                tutorx.com/{inviteData.subdomain}
+                tutorx.lk/{inviteData.subdomain}
               </div>
             </div>
 

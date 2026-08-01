@@ -111,7 +111,7 @@ export default function AdminTeachersPage() {
       const { error } = await supabase
         .from('teacher_invites')
         .insert({
-          email: inviteData.email,
+          email: inviteData.email.trim(),
           institute_name: inviteData.institute_name,
           subdomain: inviteData.subdomain.toLowerCase(),
           code: code,
@@ -173,7 +173,7 @@ export default function AdminTeachersPage() {
                     <Label htmlFor="subdomain">Subdomain URL</Label>
                     <div className="flex">
                       <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-border bg-slate-100 text-slate-500 text-sm">
-                        tutorx.com/
+                        tutorx.lk/
                       </span>
                       <Input 
                         id="subdomain" 
