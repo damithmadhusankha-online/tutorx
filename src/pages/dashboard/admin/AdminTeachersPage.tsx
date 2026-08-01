@@ -43,9 +43,35 @@ export default function AdminTeachersPage() {
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [inviting, setInviting] = useState(false);
 
+  const [isSuperAdmin, setIsSuperAdmin] = useState<boolean | null>(null);
+
   useEffect(() => {
-    fetchTeachers();
+    checkAdminAccess();
   }, []);
+
+  async function checkAdminAccess() {
+    try {
+      const { data: userAuth } = await supabase.auth.getUser();
+      if (!userAuth.user) {
+        setIsSuperAdmin(false);
+        return;
+      }
+      const { data } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userAuth.user.id)
+        .single();
+      
+      if (data && data.role === 'SUPERADMIN') {
+        setIsSuperAdmin(true);
+        fetchTeachers();
+      } else {
+        setIsSuperAdmin(false);
+      }
+    } catch {
+      setIsSuperAdmin(false);
+    }
+  }
 
   async function fetchTeachers() {
     setLoading(true);
@@ -129,6 +155,17 @@ export default function AdminTeachersPage() {
       setInviting(false);
     }
   };
+
+  if (isSuperAdmin === false) {
+    return (
+      <div className="p-8 text-center bg-card border border-border rounded-xl shadow-sm">
+        <ShieldAlert className="mx-auto h-12 w-12 text-red-500 mb-4" />
+        <h2 className="text-2xl font-bold text-heading">Access Denied</h2>
+        <p className="text-paragraph mt-2">You must be logged in as a Super Admin to view this page.</p>
+        <p className="text-paragraph mt-4">If you are trapped in a testing session, please log out and log back in.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
