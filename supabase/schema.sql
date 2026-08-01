@@ -388,3 +388,28 @@ CREATE POLICY "Superadmins manage all tickets"
 ON public.support_tickets FOR ALL 
 USING (public.get_current_role() = 'SUPERADMIN');
 
+
+-- ==========================================
+-- 8. Teacher Invites Table
+-- ==========================================
+
+CREATE TABLE public.teacher_invites (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT NOT NULL,
+  institute_name TEXT NOT NULL,
+  subdomain TEXT UNIQUE NOT NULL,
+  code TEXT UNIQUE NOT NULL,
+  is_used BOOLEAN DEFAULT false,
+  created_by UUID REFERENCES public.profiles(id),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.teacher_invites ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Superadmins can manage invites" 
+ON public.teacher_invites FOR ALL 
+USING (public.get_current_role() = 'SUPERADMIN');
+
+CREATE POLICY "Public can read active invites by code" 
+ON public.teacher_invites FOR SELECT 
+USING (is_used = false);

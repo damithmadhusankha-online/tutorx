@@ -5,6 +5,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
 import LoginPage from '@/pages/auth/LoginPage';
 import HomePage from '@/pages/HomePage';
+import TeacherSetupPage from '@/pages/auth/TeacherSetupPage';
 import TeacherPublicProfile from '@/pages/TeacherPublicProfile';
 import ClassesPage from '@/pages/dashboard/classes/ClassesPage';
 import StudentsPage from '@/pages/dashboard/students/StudentsPage';
@@ -23,6 +24,7 @@ function App() {
           <Route path="/login" element={<LoginPage role="student" />} />
           <Route path="/login/teacher" element={<LoginPage role="teacher" />} />
           <Route path="/login/manager" element={<LoginPage role="manager" />} />
+          <Route path="/teacher-setup" element={<TeacherSetupPage />} />
           <Route path="/:teacherSlug" element={<TeacherPublicProfile />} />
 
           {/* Protected Routes */}

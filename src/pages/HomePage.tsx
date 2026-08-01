@@ -45,10 +45,10 @@ export default function HomePage() {
               </Button>
             ) : (
               <>
-                <Button variant="ghost" size="sm" className="hover:text-primary transition-colors" render={<Link to="/login" />}>
-                  Sign In
+                <Button variant="ghost" size="sm" className="hover:text-violet-600 font-semibold transition-colors" render={<Link to="/login/teacher" />}>
+                  Teacher Login
                 </Button>
-                <Button variant="default" size="sm" className="bg-gradient-to-r from-primary to-blue-600 hover:opacity-90 shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all duration-300" render={<a href="https://wa.me/940770857690" target="_blank" rel="noopener noreferrer" />}>
+                <Button variant="default" size="sm" className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white border-0 hover:opacity-90 shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 transition-all duration-300" render={<a href="https://wa.me/940770857690" target="_blank" rel="noopener noreferrer" />}>
                   Contact Support
                 </Button>
               </>
@@ -69,9 +69,9 @@ export default function HomePage() {
               Empowering 500+ Educators Worldwide
             </div>
             
-            <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight text-slate-900 leading-[1.15]">
+            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 leading-[1.15]">
               Streamline Your <br />
-              <span className="bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-600 bg-clip-text text-transparent drop-shadow-sm">
                 Tuition Business
               </span>
             </h1>
@@ -88,7 +88,7 @@ export default function HomePage() {
                 </Button>
               ) : (
                 <>
-                  <Button size="lg" className="w-full sm:w-auto text-base shadow-lg shadow-primary/30 hover:shadow-primary/50 hover:-translate-y-1 transition-all duration-300 bg-gradient-to-r from-primary to-blue-600" render={<a href="https://wa.me/940770857690" target="_blank" rel="noopener noreferrer" />}>
+                  <Button size="lg" className="w-full sm:w-auto text-base shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:-translate-y-1 transition-all duration-300 bg-gradient-to-r from-violet-600 to-indigo-600 text-white border-0" render={<a href="https://wa.me/940770857690" target="_blank" rel="noopener noreferrer" />}>
                     Get The Service
                     <Sparkles className="ml-2 h-5 w-5 animate-pulse" />
                   </Button>

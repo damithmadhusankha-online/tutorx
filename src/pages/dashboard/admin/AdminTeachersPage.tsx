@@ -8,6 +8,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface TeacherAdminData {
   id: string;
@@ -25,6 +36,12 @@ export default function AdminTeachersPage() {
   const [teachers, setTeachers] = useState<TeacherAdminData[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  // Invite state
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [inviteData, setInviteData] = useState({ email: '', institute_name: '', subdomain: '' });
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [inviting, setInviting] = useState(false);
 
   useEffect(() => {
     fetchTeachers();
@@ -81,6 +98,38 @@ export default function AdminTeachersPage() {
     }
   };
 
+  const handleGenerateInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setInviting(true);
+    setInviteLink(null);
+
+    try {
+      const code = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      
+      const { data: userAuth } = await supabase.auth.getUser();
+
+      const { error } = await supabase
+        .from('teacher_invites')
+        .insert({
+          email: inviteData.email,
+          institute_name: inviteData.institute_name,
+          subdomain: inviteData.subdomain.toLowerCase(),
+          code: code,
+          created_by: userAuth.user?.id
+        });
+
+      if (error) throw error;
+
+      const url = `${window.location.origin}/teacher-setup?code=${code}`;
+      setInviteLink(url);
+    } catch (err: any) {
+      console.error('Error generating invite:', err);
+      alert(err.message || 'Failed to generate invite');
+    } finally {
+      setInviting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -88,9 +137,85 @@ export default function AdminTeachersPage() {
           <h1 className="text-3xl font-bold tracking-tight text-heading">Manage Teachers</h1>
           <p className="text-paragraph">Super Admin controls for workspace subscriptions and status.</p>
         </div>
-        <div className="bg-primary/10 text-primary px-3 py-1.5 rounded-full text-sm font-semibold flex items-center gap-2">
-          <ShieldAlert className="h-4 w-4" />
-          Super Admin Privileges Active
+        <div className="flex items-center gap-4">
+          <div className="bg-primary/10 text-primary px-3 py-1.5 rounded-full text-sm font-semibold flex items-center gap-2">
+            <ShieldAlert className="h-4 w-4" />
+            Super Admin Privileges Active
+          </div>
+
+          <Dialog open={isInviteOpen} onOpenChange={(open) => {
+             setIsInviteOpen(open);
+             if (!open) {
+               setInviteLink(null);
+               setInviteData({ email: '', institute_name: '', subdomain: '' });
+             }
+          }}>
+            <DialogTrigger render={<Button>+ Invite New Teacher</Button>} />
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Invite New Teacher</DialogTitle>
+                <DialogDescription>
+                  Generate a secure, single-use invite link for a new teacher to set up their workspace.
+                </DialogDescription>
+              </DialogHeader>
+              
+              {!inviteLink ? (
+                <form onSubmit={handleGenerateInvite} className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Teacher's Email</Label>
+                    <Input id="email" type="email" value={inviteData.email} onChange={(e) => setInviteData({...inviteData, email: e.target.value})} placeholder="teacher@example.com" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="institute">Institute Name</Label>
+                    <Input id="institute" value={inviteData.institute_name} onChange={(e) => setInviteData({...inviteData, institute_name: e.target.value})} placeholder="e.g. Success Academy" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="subdomain">Subdomain URL</Label>
+                    <div className="flex">
+                      <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-border bg-slate-100 text-slate-500 text-sm">
+                        tutorx.com/
+                      </span>
+                      <Input 
+                        id="subdomain" 
+                        className="rounded-l-none"
+                        value={inviteData.subdomain} 
+                        onChange={(e) => setInviteData({...inviteData, subdomain: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')})} 
+                        placeholder="e.g. success-academy"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter className="pt-4">
+                    <Button type="submit" disabled={inviting}>
+                      {inviting ? 'Generating...' : 'Generate Invite Link'}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              ) : (
+                <div className="py-6 space-y-4 text-center">
+                  <div className="mx-auto h-12 w-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
+                    <CheckCircle2 className="h-6 w-6" />
+                  </div>
+                  <h3 className="font-bold text-lg text-heading">Invite Generated!</h3>
+                  <p className="text-sm text-paragraph">Copy this link and send it to the teacher. They can use it to securely set their password and log in.</p>
+                  
+                  <div className="p-3 bg-slate-50 border border-border rounded-lg break-all text-sm font-mono text-left">
+                    {inviteLink}
+                  </div>
+                  
+                  <Button 
+                    className="w-full"
+                    onClick={() => {
+                      navigator.clipboard.writeText(inviteLink);
+                      alert('Copied to clipboard!');
+                    }}
+                  >
+                    Copy Link
+                  </Button>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
